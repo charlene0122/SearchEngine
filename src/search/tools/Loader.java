@@ -1,6 +1,6 @@
 package search.tools;
 
-import search.Spark.SparkContext;
+import search.spark.SparkContext;
 import java.lang.reflect.*;
 import java.io.*;
 import java.util.*;

@@ -1,12 +1,10 @@
 package search.jobs;
 
 import search.external.PorterStemmer;
-import search.Spark.*;
+import search.spark.*;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;

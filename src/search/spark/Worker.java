@@ -1,20 +1,12 @@
-package search.Spark;
+package search.spark;
 
-import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.net.*;
 import java.io.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-import static search.kvs.Worker.generateId;
 import static search.webserver.Server.*;
 import search.tools.Hasher;
 import search.tools.Serializer;
-import search.Spark.SparkContext.RowToString;
+import search.spark.SparkContext.RowToString;
 import search.kvs.*;
-import search.webserver.Request;
 
 class Worker extends search.generic.Worker {
 

@@ -1,8 +1,7 @@
-package search.Spark;
+package search.spark;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -12,8 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import search.kvs.KVSClient;
 import search.kvs.Row;
 import search.tools.*;
-import static search.Spark.Coordinator.getServer;
-import static search.generic.Coordinator.*;
+import static search.spark.Coordinator.getServer;
 
 public class SparkContextImpl implements SparkContext, Serializable {
 

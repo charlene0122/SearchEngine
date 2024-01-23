@@ -1,4 +1,4 @@
-package search.Spark;
+package search.spark;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
-import search.Spark.SparkPairRDD.TwoStringsToString;
+import search.spark.SparkPairRDD.TwoStringsToString;
 import search.kvs.Row;
 import search.tools.Hasher;
 import search.tools.Serializer;

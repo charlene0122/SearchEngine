@@ -1,4 +1,4 @@
-package search.Spark;
+package search.spark;
 
 import java.net.*;
 import java.io.*;
