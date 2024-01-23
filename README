@@ -1,43 +1,41 @@
-Group name: kfcv50
-*All command are running under the kfcv50 base folder
-**These commands are for local running, we have uploaded our EC2 shell command on the EC2 instances.
+**These commands are for local running
 
 Sample command to start kfv/flame worker and coordinator:
-java -cp bin cis5550.kvs.Coordinator 8000
-java -cp bin cis5550.kvs.Worker 8001 worker1 localhost:8000
-java -cp bin cis5550.kvs.Worker 8002 worker1 localhost:8000
-java -cp bin cis5550.kvs.Worker 8003 worker1 localhost:8000
-java -cp bin cis5550.kvs.Worker 8004 worker1 localhost:8000
-java -cp bin cis5550.flame.Coordinator 9000 localhost:8000
-java -cp bin cis5550.flame.Worker 9001 localhost:9000
-java -cp bin cis5550.flame.Worker 9002 localhost:9000
-java -cp bin cis5550.flame.Worker 9003 localhost:9000
-java -cp bin cis5550.flame.Worker 9004 localhost:9000
+java -cp bin search.kvs.Coordinator 8000
+java -cp bin search.kvs.Worker 8001 worker1 localhost:8000
+java -cp bin search.kvs.Worker 8002 worker1 localhost:8000
+java -cp bin search.kvs.Worker 8003 worker1 localhost:8000
+java -cp bin search.kvs.Worker 8004 worker1 localhost:8000
+java -cp bin search.flame.Coordinator 9000 localhost:8000
+java -cp bin search.flame.Worker 9001 localhost:9000
+java -cp bin search.flame.Worker 9002 localhost:9000
+java -cp bin search.flame.Worker 9003 localhost:9000
+java -cp bin search.flame.Worker 9004 localhost:9000
 
 
 Sample command to run Crawler:
 
-jar cf crawler.jar bin/cis5550/jobs/Crawler.class
-java -cp bin cis5550.flame.FlameSubmit localhost:9000 crawler.jar cis5550.jobs.Crawler https://en.wikipedia.org/wiki/Angeline_Quinto
+jar cf crawler.jar bin/search/jobs/Crawler.class
+java -cp bin search.flame.FlameSubmit localhost:9000 crawler.jar search.jobs.Crawler https://en.wikipedia.org/wiki/Angeline_Quinto
 
 
 Sample command to run Indexer (pt-title):
-jar cf indexer.jar bin/cis5550/jobs/Indexer.class
-java -cp bin  cis5550.flame.FlameSubmit localhost:9000 indexer.jar cis5550.jobs.Indexer
+jar cf indexer.jar bin/search/jobs/Indexer.class
+java -cp bin  search.flame.FlameSubmit localhost:9000 indexer.jar search.jobs.Indexer
 # assuming there is pt-crawl table in the corresponding worker folder 
 
 
 Sample command to run TF-IDF (pt-tfidf):
-jar cf tfidf.jar bin/cis5550/jobs/TF_IDF.class
-java -cp bin  cis5550.flame.FlameSubmit localhost:9000 tfidf.jar cis5550.jobs.TF_IDF
+jar cf tfidf.jar bin/search/jobs/TF_IDF.class
+java -cp bin  search.flame.FlameSubmit localhost:9000 tfidf.jar search.jobs.TF_IDF
 # assuming there is pt-crawl table in the corresponding worker folder 
 
 
 Sample command to run PageRank:
-jar cf pagerank.jar bin/cis5550/jobs/PageRank.class
-java -cp bin  cis5550.flame.FlameSubmit localhost:9000 pagerank.jar cis5550.jobs.PageRank 0.0001
+jar cf pagerank.jar bin/search/jobs/PageRank.class
+java -cp bin  search.flame.FlameSubmit localhost:9000 pagerank.jar search.jobs.PageRank 0.0001
 # assuming there is pt-crawl table in the corresponding worker folder 
 
 
 Sample command to run MainPage:
-java -cp bin cis5550.frontend.Mainpage
+java -cp bin search.frontend.Mainpage
