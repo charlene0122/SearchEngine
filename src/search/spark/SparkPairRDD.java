@@ -1,7 +1,6 @@
-package search.Spark;
+package search.spark;
 
 import java.util.List;
-import java.util.Iterator;
 import java.io.Serializable;
 
 public interface SparkPairRDD {

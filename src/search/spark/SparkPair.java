@@ -1,4 +1,4 @@
-package search.Spark;
+package search.spark;
 
 public class SparkPair implements Comparable<SparkPair> {
 
