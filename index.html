@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>5550gle Search Engine</title>
+    <style>
+        /* CSS */
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+        }
+
+        .search-box {
+            margin-top: 20px;
+        }
+
+        .search-box input[type="text"] {
+            width: 300px;
+            height: 30px;
+            font-size: 16px;
+        }
+
+        .search-box input[type="submit"] {
+            height: 36px;
+            background-color: #4285F4;
+            color: white;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .search-box input[type="submit"]:hover {
+            background-color: #357ae8;
+        }
+
+        .results {
+            margin-top: 30px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+<h1>5550gle</h1>
+<div class="search-box">
+    <input type="text" id="searchTerm" size="30">
+    <input type="button" value="Search" onclick="sendSearchQuery()">
+</div>
+<div id="results" class="results">
+    <!-- Search results will be displayed here -->
+</div>
+
+<script>
+    let isFetching = false;
+    let searchTerm = '';
+    let offset = 0;
+    const limit = 15;
+
+    function sendSearchQuery() {
+        searchTerm = document.getElementById('searchTerm').value;
+        offset = 0;
+        document.getElementById('results').innerHTML = '';
+        fetchResults(searchTerm);
+    }
+
+    function fetchResults(query, append = false) {
+        if (isFetching) return;
+        isFetching = true;
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `https://localhost:80/search?query=${encodeURIComponent(query)}&offset=${offset}&limit=${limit}`, true);
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                if (append) {
+                    document.getElementById('results').innerHTML += xhr.responseText;
+                } else {
+                    document.getElementById('results').innerHTML = xhr.responseText;
+                }
+                offset += limit;
+            } else {
+                document.getElementById('results').innerHTML = 'Error: ' + xhr.status;
+            }
+            isFetching = false;
+        };
+        xhr.send();
+    }
+
+    // Detect when user scrolls
+    window.onscroll = function() {
+        if ((window.innerHeight + window.pageYOffset) >= document.body.offsetHeight) {
+            fetchResults(searchTerm, true);
+        }
+    };
+</script>
+</body>
+</html>
