@@ -1,4 +1,4 @@
-package search.flame;
+package search.Spark;
 
 import java.util.*;
 import java.net.*;
@@ -32,7 +32,7 @@ class Coordinator extends search.generic.Coordinator {
     myPort = Integer.valueOf(args[0]);
     kvs = new KVSClient(args[1]);
 
-    logger.info("Flame coordinator (" + version + ") starting on port " + myPort);
+    logger.info("Spark coordinator (" + version + ") starting on port " + myPort);
 
     port(myPort);
     registerRoutes();
@@ -44,12 +44,12 @@ class Coordinator extends search.generic.Coordinator {
 
     get("/", (request, response) -> {
       response.type("text/html");
-      return "<html><head><title>Flame coordinator</title></head><body><h3>Flame Coordinator</h3>\n" + clientTable()
+      return "<html><head><title>Spark coordinator</title></head><body><h3>Spark Coordinator</h3>\n" + clientTable()
           + "</body></html>";
     });
 
     /*
-     * Set up the main route for job submissions. This is invoked from FlameSubmit.
+     * Set up the main route for job submissions. This is invoked from SparkSubmit.
      */
 
     post("/submit", (request, response) -> {
@@ -119,7 +119,7 @@ class Coordinator extends search.generic.Coordinator {
 
       // Load the class whose name the user has specified with the 'class' parameter,
       // find its 'run' method, and
-      // invoke it. The parameters are 1) an instance of a FlameContext, and 2) the
+      // invoke it. The parameters are 1) an instance of a SparkContext, and 2) the
       // command-line arguments that
       // were provided in the query string above, if any. Several things can go wrong
       // here: the class might not
@@ -128,18 +128,18 @@ class Coordinator extends search.generic.Coordinator {
       // in which case we'll get an InvocationTargetException. We'll extract the
       // underlying cause and report it
       // back to the user in the HTTP response, to help with debugging.
-      FlameContextImpl flameContext = new FlameContextImpl(jarName);
+      SparkContextImpl SparkContext = new SparkContextImpl(jarName);
 
       try {
-        Loader.invokeRunMethod(jarFile, className, flameContext, argVector);
+        Loader.invokeRunMethod(jarFile, className, SparkContext, argVector);
       } catch (IllegalAccessException iae) {
         response.status(400, "Bad request");
         return "Double-check that the class " + className
-            + " contains a public static run(FlameContext, String[]) method, and that the class itself is public!";
+            + " contains a public static run(SparkContext, String[]) method, and that the class itself is public!";
       } catch (NoSuchMethodException iae) {
         response.status(400, "Bad request");
         return "Double-check that the class " + className
-            + " contains a public static run(FlameContext, String[]) method";
+            + " contains a public static run(SparkContext, String[]) method";
       } catch (InvocationTargetException ite) {
         logger.error("The job threw an exception, which was:", ite.getCause());
         StringWriter sw = new StringWriter();
@@ -148,7 +148,7 @@ class Coordinator extends search.generic.Coordinator {
         return sw.toString();
       }
 
-      return flameContext.getOutput();
+      return SparkContext.getOutput();
     });
 
     post("/rdd", (request, response) -> {

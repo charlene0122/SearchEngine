@@ -1,7 +1,7 @@
 package search.jobs;
 
 import search.external.PorterStemmer;
-import search.flame.*;
+import search.Spark.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -12,8 +12,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class Indexer {
-    public static void run(FlameContext context, String[] args) throws Exception {
-        FlameRDD data = context.fromTable("pt-crawl", row -> {
+    public static void run(SparkContext context, String[] args) throws Exception {
+        SparkRDD data = context.fromTable("pt-crawl", row -> {
             if (row.get("url").contains("..") || row.get("url").length() > 100) {
                 return null;
             }
@@ -23,11 +23,11 @@ public class Indexer {
         }, true);
         data.saveAsTable("pt-data");
 
-        FlamePairRDD pairs = null;
+        SparkPairRDD pairs = null;
         try {
             pairs = data.mapToPair(s -> {
                 String[] parts = s.split(",", 2);
-                FlamePair pair = new FlamePair(parts[0], parts[1]);
+                SparkPair pair = new SparkPair(parts[0], parts[1]);
                 return pair;
             }, true);
         } catch (Exception e) {
@@ -36,7 +36,7 @@ public class Indexer {
         pairs.saveAsTable("pt-pairs");
 
         // u, p pairs to w, u pairs
-        FlamePairRDD wordUrlPairs = pairs.flatMapToPair(pair -> {
+        SparkPairRDD wordUrlPairs = pairs.flatMapToPair(pair -> {
             String url = pair._1();
             String pageContent = pair._2();
             // String text = removeTagsAndPunctuation(pageContent).toLowerCase();
@@ -53,11 +53,11 @@ public class Indexer {
                 words.add(stemmer.toString());
             }
 
-            return words.stream().map(word -> new FlamePair(word, url)).collect(Collectors.toList());
+            return words.stream().map(word -> new SparkPair(word, url)).collect(Collectors.toList());
         }, true);
         wordUrlPairs.saveAsTable("pt-wordurlpairs");
 
-        FlamePairRDD invertedIndex = wordUrlPairs.foldByKey("", (urls, url) -> {
+        SparkPairRDD invertedIndex = wordUrlPairs.foldByKey("", (urls, url) -> {
             if (!urls.isEmpty() && !urls.contains(url)) {
                 return urls + "," + url;
             } else if (urls.isEmpty()) {

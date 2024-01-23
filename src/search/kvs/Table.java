@@ -13,23 +13,23 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
 
+/**
+ * The Table class represents the data storage structure for a key-value store
+ * system.
+ * It provides methods for creating tables, adding and retrieving rows, and
+ * counting rows.
+ * Tables can be stored either in-memory or persistently on disk.
+ */
 public class Table {
     public static Map<String, Map<String, Row>> tables = new ConcurrentHashMap<>();
 
-    // public static synchronized void createTable(String tableName, String
-    // storageDirectory) {
-    // if (tables.get(tableName) == null) {
-    // tables.put(tableName, new HashMap<>());
-    // if (tableName.startsWith("pt-")) {
-    // String fileName = storageDirectory + File.separator +
-    // KeyEncoder.encode(tableName);
-    // File file = new File(fileName);
-    // file.mkdirs();
-    // }
-    // }
-    // }
-
-    // do not put table in memory if it starts with pt
+    /**
+     * Creates a new table either in-memory or on disk based on the table name.
+     * Tables prefixed with "pt-" are persisted on disk.
+     * 
+     * @param tableName        The name of the table to create.
+     * @param storageDirectory Directory for storing persistent tables.
+     */
     public static synchronized void createTable(String tableName, String storageDirectory) {
         if (tableName.startsWith(("pt-"))) {
             if (!Files.exists(Paths.get(storageDirectory, KeyEncoder.encode(tableName)))) {
@@ -44,6 +44,7 @@ public class Table {
         }
     }
 
+    // Adds or updates a row in the specified table.
     public static synchronized void putRow(String table, String rowKey, Row row, String storageDirectory) {
         if (table.startsWith("pt-")) {
             Path tableDir = Paths.get(storageDirectory, KeyEncoder.encode(table));
@@ -66,6 +67,7 @@ public class Table {
         }
     }
 
+    // Retrieves a row from a specified table.
     public static synchronized Row getRow(String tableName, String rowKey, String storageDirectory) {
         if (tableName.startsWith("pt-")) {
             Path rowPath = Paths.get(storageDirectory, tableName, search.tools.KeyEncoder.encode(rowKey));
@@ -87,6 +89,8 @@ public class Table {
 
     }
 
+    // Reads rows from a directory into a concurrent map. Used for persistent
+    // tables.
     public static ConcurrentMap<String, Row> readRowsFromDirectory(String tableName, String storageDirectory) {
         File tableDirectory = new File(storageDirectory + File.separator + tableName);
 
@@ -115,6 +119,7 @@ public class Table {
         return rows;
     }
 
+    // Counts the number of rows in a table.
     public static int countRows(String tableName, String storageDirectory) {
         File tableDirectory = new File(storageDirectory + File.separator + tableName);
 

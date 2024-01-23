@@ -1,21 +1,21 @@
-package search.flame;
+package search.Spark;
 
 import java.io.Serializable;
 import java.util.Vector;
 import java.util.Iterator;
 import java.util.List;
 
-public interface FlameRDD {
+public interface SparkRDD {
   public interface StringToIterable extends Serializable {
     Iterable<String> op(String a) throws Exception;
   };
 
   public interface StringToPair extends Serializable {
-    FlamePair op(String a) throws Exception;
+    SparkPair op(String a) throws Exception;
   };
 
   public interface StringToPairIterable extends Serializable {
-    Iterable<FlamePair> op(String a) throws Exception;
+    Iterable<SparkPair> op(String a) throws Exception;
   };
 
   public interface StringToString extends Serializable {
@@ -47,7 +47,7 @@ public interface FlameRDD {
   // copies of some elements, the new RDD should contain only
   // one copy of those elements.
 
-  public FlameRDD distinct() throws Exception;
+  public SparkRDD distinct() throws Exception;
 
   // destroy() should delete the underlying table in the key-value store.
   // Any future invocations of any method on this RDD should throw an
@@ -70,7 +70,7 @@ public interface FlameRDD {
   // the result of the last invocation, or 'zeroElement' if the
   // RDD does not contain any elements.
 
-  public String fold(String zeroElement, FlamePairRDD.TwoStringsToString lambda, boolean persistent) throws Exception;
+  public String fold(String zeroElement, SparkPairRDD.TwoStringsToString lambda, boolean persistent) throws Exception;
 
   // collect() should return a list that contains all the elements
   // in the RDD.
@@ -84,13 +84,13 @@ public interface FlameRDD {
   // in this case, the RDD should contain multiple copies of that string.
   // The lambda is allowed to return null or an empty Iterable.
 
-  public FlameRDD flatMap(StringToIterable lambda, boolean persistent) throws Exception;
+  public SparkRDD flatMap(StringToIterable lambda, boolean persistent) throws Exception;
 
   // flatMapToPair() is analogous to flatMap(), except that the lambda
   // returns pairs instead of strings, and tha tthe output is a PairRDD
   // instead of a normal RDD.
 
-  public FlamePairRDD flatMapToPair(StringToPairIterable lambda, boolean persistent) throws Exception;
+  public SparkPairRDD flatMapToPair(StringToPairIterable lambda, boolean persistent) throws Exception;
 
   // mapToPair() should invoke the provided lambda once for each element
   // of the RDD, and should return a PairRDD that contains all the pairs
@@ -98,7 +98,7 @@ public interface FlameRDD {
   // different invocations can return pairs with the same keys and/or the
   // same values.
 
-  public FlamePairRDD mapToPair(StringToPair lambda, boolean persistent) throws Exception;
+  public SparkPairRDD mapToPair(StringToPair lambda, boolean persistent) throws Exception;
 
   // ----------------------- EXTRA CREDIT ITEMS ---------------------------
 
@@ -109,7 +109,7 @@ public interface FlameRDD {
   // of the input RDDs contain multiple instances. This method is extra
   // credit on HW6 and should return 'null' if this EC is not implemented.
 
-  public FlameRDD intersection(FlameRDD r, boolean persistent) throws Exception;
+  public SparkRDD intersection(SparkRDD r, boolean persistent) throws Exception;
 
   // sample() should return a new RDD that contains each element in the
   // original RDD with the probability that is given as an argument.
@@ -117,7 +117,7 @@ public interface FlameRDD {
   // each instance should be sampled individually. This method is extra
   // credit on HW6 and should return 'null' if this EC is not implemented.
 
-  public FlameRDD sample(double f, boolean persistent) throws Exception;
+  public SparkRDD sample(double f, boolean persistent) throws Exception;
 
   // groupBy() should apply the given lambda to each element in the RDD
   // and return a PairRDD with elements (k, V), where k is a string that
@@ -126,14 +126,14 @@ public interface FlameRDD {
   // lambda returned k. This method is extra credit on HW6 and should
   // return 'null' if this EC is not implemented.
 
-  public FlamePairRDD groupBy(StringToString lambda) throws Exception;
+  public SparkPairRDD groupBy(StringToString lambda) throws Exception;
 
   // filter() should accept a boolean predicate and should return
   // another RDD that contains only those elements from the original RDD
   // on which the predicate evaluates to true. This method is extra credit
   // on HW7 and should return 'null' if you did not do this EC.
 
-  public FlameRDD filter(StringToBoolean lambda) throws Exception;
+  public SparkRDD filter(StringToBoolean lambda) throws Exception;
 
   // mapPartitions() should take a lambda that is given an Iterator<String>
   // and returns another Iterator<String>. The lambda should be invoked once
@@ -143,5 +143,5 @@ public interface FlameRDD {
   // another RDD, which mapPartitions() should return. This method is
   // extra credit on HW7 and should return 'null' if you did not do this EC.
 
-  public FlameRDD mapPartitions(IteratorToIterator lambda) throws Exception;
+  public SparkRDD mapPartitions(IteratorToIterator lambda) throws Exception;
 }

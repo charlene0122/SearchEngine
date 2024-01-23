@@ -1,25 +1,25 @@
-package search.flame;
+package search.Spark;
 
 import java.util.List;
 import java.util.Iterator;
 import java.io.Serializable;
 
-public interface FlamePairRDD {
+public interface SparkPairRDD {
   public interface TwoStringsToString extends Serializable {
     public String op(String a, String b);
   };
 
   public interface PairToPairIterable extends Serializable {
-    Iterable<FlamePair> op(FlamePair a) throws Exception;
+    Iterable<SparkPair> op(SparkPair a) throws Exception;
   };
 
   public interface PairToStringIterable extends Serializable {
-    Iterable<String> op(FlamePair a) throws Exception;
+    Iterable<String> op(SparkPair a) throws Exception;
   };
 
   // collect() should return a list that contains all the elements in the PairRDD.
 
-  public List<FlamePair> collect() throws Exception;
+  public List<SparkPair> collect() throws Exception;
 
   // foldByKey() folds all the values that are associated with a given key in the
   // current PairRDD, and returns a new PairRDD with the resulting keys and
@@ -36,7 +36,7 @@ public interface FlamePairRDD {
   // invocation should use the result of the previous one. v is the result of the
   // last invocation.
 
-  public FlamePairRDD foldByKey(String zeroElement, TwoStringsToString lambda, boolean persistent) throws Exception;
+  public SparkPairRDD foldByKey(String zeroElement, TwoStringsToString lambda, boolean persistent) throws Exception;
 
   // saveAsTable() should cause a table with the specified name to appear
   // in the KVS that contains the data from this PairRDD. The table should
@@ -56,7 +56,7 @@ public interface FlamePairRDD {
   // copies of that string. The lambda is allowed to return null or an empty
   // Iterable.
 
-  public FlameRDD flatMap(PairToStringIterable lambda, boolean persistent) throws Exception;
+  public SparkRDD flatMap(PairToStringIterable lambda, boolean persistent) throws Exception;
 
   // destroy() should delete the underlying table in the key-value store.
   // Any future invocations of any method on this RDD should throw an
@@ -68,13 +68,13 @@ public interface FlamePairRDD {
   // pairs
   // instead of strings, and tha tthe output is a PairRDD instead of a normal RDD.
 
-  public FlamePairRDD flatMapToPair(PairToPairIterable lambda, boolean persistent) throws Exception;
+  public SparkPairRDD flatMapToPair(PairToPairIterable lambda, boolean persistent) throws Exception;
 
   // join() joins the current PairRDD A with another PairRDD B. Suppose A contains
   // a pair (k,v_A) and B contains a pair (k,v_B). Then the result should contain
   // a pair (k,v_A+","+v_B).
 
-  public FlamePairRDD join(FlamePairRDD other, boolean persistent) throws Exception;
+  public SparkPairRDD join(SparkPairRDD other, boolean persistent) throws Exception;
 
   // This method should return a new PairRDD that contains, for each key k that
   // exists
@@ -89,5 +89,5 @@ public interface FlamePairRDD {
   // is
   // extra credit in HW7; if you do not implement it, please return 'null'.
 
-  public FlamePairRDD cogroup(FlamePairRDD other) throws Exception;
+  public SparkPairRDD cogroup(SparkPairRDD other) throws Exception;
 }

@@ -12,29 +12,52 @@ import search.tools.KeyEncoder;
 import search.tools.Logger;
 import search.webserver.Server;
 
+/**
+ * The Worker class represents a node in a distributed key-value storage system.
+ * It handles storage operations (both in-memory and persistently on disk), data
+ * retrieval, and server-client interactions.
+ * This class is responsible for:
+ * - Initializing the server and processing incoming HTTP requests.
+ * - Managing the storage of data in a directory structure.
+ * - Performing operations like data insertion, update, deletion, and retrieval.
+ * - Generating a unique worker ID and maintaining a ping thread for worker
+ * status.
+ * - Serving web pages that display stored tables and their contents.
+ * 
+ * Command line arguments:
+ * - Port number for the server.
+ * - Storage directory for persisting data.
+ * - IP and port of the coordinator (format: "ip:port").
+ */
 public class Worker extends search.generic.Worker {
 	public static Logger logger = Logger.getLogger(Worker.class);
 
 	public static void main(String[] args) {
+
+		// Validate and parse command line arguments.
 		if (args.length < 3) {
 			System.out.println("Please provide the required arguments: <port> <storage directory> <ip:port>");
 			System.exit(1);
 		}
 
+		// Parse and validate the port number.
 		int port = Integer.parseInt(args[0]);
 		if (port <= 0 || port > 65535) {
 			System.out.println("Please provide a valid port number between 1 and 65535.");
 			System.exit(1);
 		}
 
+		// Initialize storage directory and worker identity.
 		String storageDirectory = args[1];
 		String ipPort = args[2];
 		String workerId = null;
 		try {
+			// Create storage directory if it doesn't exist.
 			if (!(new File(storageDirectory)).exists()) {
 				(new File(storageDirectory)).mkdir();
 			}
 
+			// Generate or read worker ID.
 			File file = new File(storageDirectory + File.separator + "id");
 			if (file.exists()) {
 				workerId = (new Scanner(file)).nextLine();
@@ -50,9 +73,11 @@ public class Worker extends search.generic.Worker {
 			e.printStackTrace();
 		}
 
+		// Configure server port and start the worker's ping thread.
 		Server.port(port);
 		startPingThread(ipPort, workerId, port);
 
+		// HTTP GET route for the root. Displays stored tables and their key counts.
 		Server.get("/", (req, res) -> {
 			StringBuilder html = new StringBuilder("<html><body>");
 			html.append("<table border='1'><tr><th>Table Name</th><th>Number of Keys</th></tr>");
@@ -90,6 +115,7 @@ public class Worker extends search.generic.Worker {
 			return html.toString();
 		});
 
+		// HTTP GET route for listing tables.
 		Server.get("/tables", (req, res) -> {
 
 			String result = "";
@@ -100,38 +126,9 @@ public class Worker extends search.generic.Worker {
 			}
 
 			return result;
-
-			// StringBuilder tablesList = new StringBuilder();
-			//
-			// // Append in-memory tables
-			// System.out.println("==============kvs/Worker get
-			// tables====================");
-			// System.out.println("number of tables: "+ Table.tables.size());
-			//
-			// for (String tableName : Table.tables.keySet()) {
-			// System.out.println("adding in memory: "+ tableName);
-			// tablesList.append(tableName).append("\n");
-			// }
-			//
-			// // Append persistent tables from the storage directory
-			// try (Stream<Path> paths = Files.walk(Paths.get(storageDirectory), 1)) {
-			// paths
-			// .filter(Files::isDirectory)
-			// .filter(path -> !path.equals(Paths.get(storageDirectory)))
-			// .map(path -> path.getFileName().toString())
-			// .forEach(tableName -> tablesList.append(tableName).append("\n"));
-			// } catch (IOException e) {
-			// e.printStackTrace();
-			// res.status(500, "Internal Error - Listing Tables");
-			// return null;
-			// }
-			//
-			// // Setting content type as plain text
-			// res.type("text/plain");
-			// System.out.println("tablesList length: " +tablesList.length());
-			// return tablesList.length() == 0 ? null : tablesList.toString();
 		});
 
+		// HTTP GET route for viewing a specific table's contents.
 		Server.get("/view/:table", (req, res) -> {
 			String tableName = req.params("table");
 			String fromRow = req.queryParams("fromRow");
@@ -193,6 +190,7 @@ public class Worker extends search.generic.Worker {
 			return html.toString();
 		});
 
+		// HTTP PUT route for inserting or updating a column at a row in a table.
 		Server.put("/data/:table/:row/:column", (req, res) -> {
 			String table = req.params("table");
 			String rowKey = req.params("row");
@@ -229,6 +227,7 @@ public class Worker extends search.generic.Worker {
 			return "OK";
 		});
 
+		// HTTP GET route for reading a column of a row in a table.
 		Server.get("/data/:table/:row/:column", (req, res) -> {
 			String table = req.params("table");
 			String rowKey = req.params("row");
@@ -256,6 +255,7 @@ public class Worker extends search.generic.Worker {
 			return null;
 		});
 
+		// HTTP GET route for reading a row in a table.
 		Server.get("/data/:table/:row", (req, res) -> {
 			String table = req.params("table");
 			String rowKey = req.params("row");
@@ -276,6 +276,7 @@ public class Worker extends search.generic.Worker {
 			return null;
 		});
 
+		// HTTP GET route for reading all rows in a table.
 		Server.get("/data/:table", (req, res) -> {
 			String tableName = req.params("table");
 			String startRow = req.queryParams("startRow");
@@ -337,30 +338,12 @@ public class Worker extends search.generic.Worker {
 				}
 			}
 
-			// if (rowsMap == null) {
-			// res.status(404, "Table not found");
-			// return "Table not found";
-			// }
-
-			// List<String> rowKeys = new ArrayList<>(rowsMap.keySet());
-			// Collections.sort(rowKeys);
-			//
-			//
-			//
-			// for (String rowKey : rowKeys) {
-			// if ((startRow == null || rowKey.compareTo(startRow) >= 0) &&
-			// (endRowExclusive == null || rowKey.compareTo(endRowExclusive) < 0)) {
-			//
-			// Row row = rowsMap.get(rowKey);
-			// baos.write(row.toByteArray());
-			// baos.write("\n".getBytes(StandardCharsets.UTF_8));
-			// }
-			// }
 			res.write("\n".getBytes(StandardCharsets.UTF_8));
 			// res.bodyAsBytes(baos.toByteArray());
 			return null;
 		});
 
+		// HTTP PUT route for adding a row in a table.
 		Server.put("/data/:table/", (req, res) -> {
 			String table = req.params("table");
 			if (table == null) {
@@ -383,6 +366,7 @@ public class Worker extends search.generic.Worker {
 			}
 		});
 
+		// HTTP GET route for counting rows in a table.
 		Server.get("/count/:table", (req, res) -> {
 			String tableName = req.params("table");
 			if (tableName == null) {
@@ -407,6 +391,7 @@ public class Worker extends search.generic.Worker {
 			return count;
 		});
 
+		// HTTP PUT route for saving/renaming a table.
 		Server.put("/rename/:table", (req, res) -> {
 			String oldName = req.params("table");
 			String newName = req.body();
@@ -463,6 +448,7 @@ public class Worker extends search.generic.Worker {
 			return "OK";
 		});
 
+		// HTTP PUT route for deleting a table.
 		Server.put("/delete/:table", (req, res) -> {
 			String tableName = req.params("table");
 			if (tableName == null) {
@@ -498,6 +484,7 @@ public class Worker extends search.generic.Worker {
 
 	}
 
+	// Utility method to generate a unique ID for the worker.
 	public static String generateId() {
 		Random random = new Random();
 		StringBuilder id = new StringBuilder(5);

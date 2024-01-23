@@ -1,4 +1,4 @@
-package search.flame;
+package search.Spark;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -8,14 +8,14 @@ import search.kvs.KVSClient;
 import search.kvs.Row;
 import search.tools.Serializer;
 
-public class FlamePairRDDImpl implements FlamePairRDD {
+public class SparkPairRDDImpl implements SparkPairRDD {
 
 	String tableName;
 	KVSClient kvs;
-	FlameContextImpl context;
+	SparkContextImpl context;
 	boolean isDestroyed;
 
-	public FlamePairRDDImpl(FlameContextImpl context, String table) {
+	public SparkPairRDDImpl(SparkContextImpl context, String table) {
 		this.tableName = table;
 		this.context = context;
 		this.kvs = Coordinator.kvs;
@@ -23,14 +23,14 @@ public class FlamePairRDDImpl implements FlamePairRDD {
 	}
 
 	@Override
-	public List<FlamePair> collect() throws Exception {
+	public List<SparkPair> collect() throws Exception {
 		checkIfDestroyed();
-		List<FlamePair> results = new ArrayList<>();
+		List<SparkPair> results = new ArrayList<>();
 		Iterator<Row> rows = kvs.scan(tableName);
 		while (rows.hasNext()) {
 			Row row = rows.next();
 			for (String column : row.columns()) {
-				FlamePair pair = new FlamePair(row.key(), row.get(column));
+				SparkPair pair = new SparkPair(row.key(), row.get(column));
 				results.add(pair);
 			}
 		}
@@ -38,10 +38,10 @@ public class FlamePairRDDImpl implements FlamePairRDD {
 	}
 
 	@Override
-	public FlamePairRDD foldByKey(String zeroElement, TwoStringsToString lambda, boolean persistent) throws Exception {
+	public SparkPairRDD foldByKey(String zeroElement, TwoStringsToString lambda, boolean persistent) throws Exception {
 		checkIfDestroyed();
 		byte[] lambdaAsBytes = Serializer.objectToByteArray(lambda);
-		return (FlamePairRDD) context.invokeOperation(tableName, lambdaAsBytes, "foldByKey", zeroElement, "rdd",
+		return (SparkPairRDD) context.invokeOperation(tableName, lambdaAsBytes, "foldByKey", zeroElement, "rdd",
 				persistent);
 	}
 
@@ -53,11 +53,11 @@ public class FlamePairRDDImpl implements FlamePairRDD {
 	}
 
 	@Override
-	public FlameRDD flatMap(PairToStringIterable lambda, boolean persistent) throws Exception {
+	public SparkRDD flatMap(PairToStringIterable lambda, boolean persistent) throws Exception {
 		checkIfDestroyed();
 		byte[] lambdaAsBytes = Serializer.objectToByteArray(lambda);
 		System.out.println("before flatmap invoke operation");
-		return (FlameRDD) context.invokeOperation(tableName, lambdaAsBytes, "flatMapFromPair", null, "rdd", persistent);
+		return (SparkRDD) context.invokeOperation(tableName, lambdaAsBytes, "flatMapFromPair", null, "rdd", persistent);
 	}
 
 	@Override
@@ -68,20 +68,20 @@ public class FlamePairRDDImpl implements FlamePairRDD {
 	}
 
 	@Override
-	public FlamePairRDD flatMapToPair(PairToPairIterable lambda, boolean persistent) throws Exception {
+	public SparkPairRDD flatMapToPair(PairToPairIterable lambda, boolean persistent) throws Exception {
 		checkIfDestroyed();
 		byte[] lambdaAsBytes = Serializer.objectToByteArray(lambda);
-		return (FlamePairRDD) context.invokeOperation(tableName, lambdaAsBytes, "flatMapToPairFromPair", null, "rdd",
+		return (SparkPairRDD) context.invokeOperation(tableName, lambdaAsBytes, "flatMapToPairFromPair", null, "rdd",
 				persistent);
 	}
 
 	@Override
-	public FlamePairRDD join(FlamePairRDD other, boolean persistent) throws Exception {
+	public SparkPairRDD join(SparkPairRDD other, boolean persistent) throws Exception {
 		checkIfDestroyed();
-		FlamePairRDDImpl otherImpl = (FlamePairRDDImpl) other;
+		SparkPairRDDImpl otherImpl = (SparkPairRDDImpl) other;
 		String otherTable = otherImpl.tableName;
 		byte[] otherTableAsBytes = Serializer.objectToByteArray(otherTable);
-		return (FlamePairRDD) context.invokeOperation(this.tableName, otherTableAsBytes, "join", otherTable, "rdd",
+		return (SparkPairRDD) context.invokeOperation(this.tableName, otherTableAsBytes, "join", otherTable, "rdd",
 				persistent);
 	}
 
@@ -92,7 +92,7 @@ public class FlamePairRDDImpl implements FlamePairRDD {
 	}
 
 	@Override
-	public FlamePairRDD cogroup(FlamePairRDD other) throws Exception {
+	public SparkPairRDD cogroup(SparkPairRDD other) throws Exception {
 		return null;
 	}
 

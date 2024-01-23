@@ -1,4 +1,4 @@
-package search.flame;
+package search.Spark;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -12,17 +12,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import search.kvs.KVSClient;
 import search.kvs.Row;
 import search.tools.*;
-import static search.flame.Coordinator.getServer;
+import static search.Spark.Coordinator.getServer;
 import static search.generic.Coordinator.*;
 
-public class FlameContextImpl implements FlameContext, Serializable {
+public class SparkContextImpl implements SparkContext, Serializable {
 
     private String jarName;
     private StringBuilder output;
     private int sequenceNumber;
     private int concurrencyLevel;
 
-    public FlameContextImpl(String jarName) {
+    public SparkContextImpl(String jarName) {
         this.jarName = jarName;
         this.output = new StringBuilder();
         this.sequenceNumber = 0;
@@ -48,7 +48,7 @@ public class FlameContextImpl implements FlameContext, Serializable {
     }
 
     @Override
-    public FlameRDD parallelize(List<String> list) throws Exception {
+    public SparkRDD parallelize(List<String> list) throws Exception {
         String tableName = "job_" + System.currentTimeMillis() + "_" + (sequenceNumber++);
 
         for (int i = 0; i < list.size(); i++) {
@@ -56,7 +56,7 @@ public class FlameContextImpl implements FlameContext, Serializable {
             System.out.println("RDD parallelize, table name: " + tableName + " row key: " + rowKey);
             Coordinator.kvs.put(tableName, rowKey, "value", list.get(i));
         }
-        return new FlameRDDImpl(this, tableName);
+        return new SparkRDDImpl(this, tableName);
     }
 
     public Object invokeOperation(String inputTable, byte[] lambda, String operation, String argument, String route,
@@ -80,9 +80,9 @@ public class FlameContextImpl implements FlameContext, Serializable {
         partitionerHandler.addKVSWorker(Coordinator.kvs.getWorkerAddress(lastWorker), null,
                 Coordinator.kvs.getWorkerID(0));
 
-        System.out.println("flame context flameworkers count: " + Coordinator.getWorkers());
+        System.out.println("Spark context Sparkworkers count: " + Coordinator.getWorkers());
         for (String worker : Coordinator.getWorkers()) {
-            partitionerHandler.addFlameWorker(worker);
+            partitionerHandler.addSparkWorker(worker);
         }
 
         Vector<Partitioner.Partition> partitionSets = partitionerHandler.assignPartitions();
@@ -98,11 +98,11 @@ public class FlameContextImpl implements FlameContext, Serializable {
             String startKey = individualPartition.fromKey == null ? "!!" : individualPartition.fromKey;
             String endKeyExclusive = individualPartition.toKeyExclusive == null ? "!!"
                     : individualPartition.toKeyExclusive;
-            String flameWorkerID = individualPartition.assignedFlameWorker;
+            String SparkWorkerID = individualPartition.assignedSparkWorker;
 
             StringBuilder url = new StringBuilder();
 
-            url.append("http://").append(getServer()).append("/" + route + "?worker=").append(flameWorkerID)
+            url.append("http://").append(getServer()).append("/" + route + "?worker=").append(SparkWorkerID)
                     .append("&oper=").append(operation).append("&input=").append(inputTable).append("&output=")
                     .append(outputTable).append("&from=").append(startKey).append("&to=").append(endKeyExclusive)
                     .append("&jar=").append(jarName);
@@ -150,7 +150,7 @@ public class FlameContextImpl implements FlameContext, Serializable {
 
         if (Arrays.asList("mapToPair", "groupBy", "foldByKey", "flatMapToPair", "flatMapToPairFromPair", "join")
                 .contains(operation)) {
-            return new FlamePairRDDImpl(this, outputTable);
+            return new SparkPairRDDImpl(this, outputTable);
         } else if (operation != null && operation.equals("fold")) {
             Iterator<Row> rows = Coordinator.kvs.scan(outputTable);
             if (rows.hasNext()) {
@@ -159,13 +159,13 @@ public class FlameContextImpl implements FlameContext, Serializable {
             }
         }
 
-        return new FlameRDDImpl(this, outputTable);
+        return new SparkRDDImpl(this, outputTable);
     }
 
     @Override
-    public FlameRDD fromTable(String tableName, RowToString lambda, boolean persistent) throws Exception {
+    public SparkRDD fromTable(String tableName, RowToString lambda, boolean persistent) throws Exception {
         byte[] lambdaAsBytes = Serializer.objectToByteArray(lambda);
-        return (FlameRDD) invokeOperation(tableName, lambdaAsBytes, null, null, "fromTable", persistent);
+        return (SparkRDD) invokeOperation(tableName, lambdaAsBytes, null, null, "fromTable", persistent);
     }
 
     @Override

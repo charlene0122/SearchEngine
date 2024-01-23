@@ -1,4 +1,4 @@
-package search.flame;
+package search.Spark;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -7,17 +7,17 @@ import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
-import search.flame.FlamePairRDD.TwoStringsToString;
+import search.Spark.SparkPairRDD.TwoStringsToString;
 import search.kvs.Row;
 import search.tools.Hasher;
 import search.tools.Serializer;
 
-public class FlameRDDImpl implements FlameRDD {
+public class SparkRDDImpl implements SparkRDD {
 	String tableName;
-	FlameContextImpl context;
+	SparkContextImpl context;
 	boolean isDestroyed;
 
-	public FlameRDDImpl(FlameContextImpl context, String tableName) {
+	public SparkRDDImpl(SparkContextImpl context, String tableName) {
 		this.tableName = tableName;
 		this.context = context;
 		this.isDestroyed = false;
@@ -41,30 +41,30 @@ public class FlameRDDImpl implements FlameRDD {
 	}
 
 	@Override
-	public FlameRDD flatMap(StringToIterable lambda, boolean persistent) throws Exception {
+	public SparkRDD flatMap(StringToIterable lambda, boolean persistent) throws Exception {
 		checkIfDestroyed();
 		byte[] lambdaAsBytes = Serializer.objectToByteArray(lambda);
-		return (FlameRDD) context.invokeOperation(tableName, lambdaAsBytes, "flatMap", null, "rdd", persistent);
+		return (SparkRDD) context.invokeOperation(tableName, lambdaAsBytes, "flatMap", null, "rdd", persistent);
 	}
 
 	@Override
-	public FlamePairRDD mapToPair(StringToPair lambda, boolean persistent) throws Exception {
+	public SparkPairRDD mapToPair(StringToPair lambda, boolean persistent) throws Exception {
 		checkIfDestroyed();
 		byte[] lambdaAsBytes = Serializer.objectToByteArray(lambda);
-		return (FlamePairRDD) context.invokeOperation(tableName, lambdaAsBytes, "mapToPair", null, "rdd", persistent);
+		return (SparkPairRDD) context.invokeOperation(tableName, lambdaAsBytes, "mapToPair", null, "rdd", persistent);
 	}
 
 	@Override
-	public FlameRDD intersection(FlameRDD r, boolean persistent) throws Exception {
+	public SparkRDD intersection(SparkRDD r, boolean persistent) throws Exception {
 		checkIfDestroyed();
-		return (FlameRDD) context.invokeOperation(tableName, null, "intersection", ((FlameRDDImpl) r).getTable(), "rdd",
+		return (SparkRDD) context.invokeOperation(tableName, null, "intersection", ((SparkRDDImpl) r).getTable(), "rdd",
 				persistent);
 	}
 
 	@Override
-	public FlameRDD sample(double f, boolean persistent) throws Exception {
+	public SparkRDD sample(double f, boolean persistent) throws Exception {
 		checkIfDestroyed();
-		return (FlameRDD) context.invokeOperation(tableName, null, "sample", String.valueOf(f), "rdd", persistent);
+		return (SparkRDD) context.invokeOperation(tableName, null, "sample", String.valueOf(f), "rdd", persistent);
 	}
 
 	@Override
@@ -81,7 +81,7 @@ public class FlameRDDImpl implements FlameRDD {
 	}
 
 	@Override
-	public FlameRDD distinct() throws Exception {
+	public SparkRDD distinct() throws Exception {
 		checkIfDestroyed();
 		Iterator<Row> iter = context.getKVS().scan(tableName);
 		String newTableName = "distinct_" + tableName;
@@ -95,7 +95,7 @@ public class FlameRDDImpl implements FlameRDD {
 				context.getKVS().put(newTableName, rowKey, "value", value);
 			}
 		}
-		return new FlameRDDImpl(context, newTableName);
+		return new SparkRDDImpl(context, newTableName);
 	}
 
 	@Override
@@ -131,10 +131,10 @@ public class FlameRDDImpl implements FlameRDD {
 	}
 
 	@Override
-	public FlamePairRDD flatMapToPair(StringToPairIterable lambda, boolean persistent) throws Exception {
+	public SparkPairRDD flatMapToPair(StringToPairIterable lambda, boolean persistent) throws Exception {
 		checkIfDestroyed();
 		byte[] lambdaAsBytes = Serializer.objectToByteArray(lambda);
-		return (FlamePairRDD) context.invokeOperation(tableName, lambdaAsBytes, "flatMapToPair", null, "rdd",
+		return (SparkPairRDD) context.invokeOperation(tableName, lambdaAsBytes, "flatMapToPair", null, "rdd",
 				persistent);
 	}
 
@@ -145,17 +145,17 @@ public class FlameRDDImpl implements FlameRDD {
 	}
 
 	@Override
-	public FlameRDD filter(StringToBoolean lambda) throws Exception {
+	public SparkRDD filter(StringToBoolean lambda) throws Exception {
 		return null;
 	}
 
 	@Override
-	public FlameRDD mapPartitions(IteratorToIterator lambda) throws Exception {
+	public SparkRDD mapPartitions(IteratorToIterator lambda) throws Exception {
 		return null;
 	}
 
 	@Override
-	public FlamePairRDD groupBy(StringToString lambda) throws Exception {
+	public SparkPairRDD groupBy(StringToString lambda) throws Exception {
 		checkIfDestroyed();
 		return null;
 	}

@@ -1,39 +1,39 @@
 **These commands are for local running
 
-Sample command to start kfv/flame worker and coordinator:
+Sample command to start kfv/Spark worker and coordinator:
 java -cp bin search.kvs.Coordinator 8000
 java -cp bin search.kvs.Worker 8001 worker1 localhost:8000
 java -cp bin search.kvs.Worker 8002 worker1 localhost:8000
 java -cp bin search.kvs.Worker 8003 worker1 localhost:8000
 java -cp bin search.kvs.Worker 8004 worker1 localhost:8000
-java -cp bin search.flame.Coordinator 9000 localhost:8000
-java -cp bin search.flame.Worker 9001 localhost:9000
-java -cp bin search.flame.Worker 9002 localhost:9000
-java -cp bin search.flame.Worker 9003 localhost:9000
-java -cp bin search.flame.Worker 9004 localhost:9000
+java -cp bin search.Spark.Coordinator 9000 localhost:8000
+java -cp bin search.Spark.Worker 9001 localhost:9000
+java -cp bin search.Spark.Worker 9002 localhost:9000
+java -cp bin search.Spark.Worker 9003 localhost:9000
+java -cp bin search.Spark.Worker 9004 localhost:9000
 
 
 Sample command to run Crawler:
 
 jar cf crawler.jar bin/search/jobs/Crawler.class
-java -cp bin search.flame.FlameSubmit localhost:9000 crawler.jar search.jobs.Crawler https://en.wikipedia.org/wiki/Angeline_Quinto
+java -cp bin search.Spark.SparkSubmit localhost:9000 crawler.jar search.jobs.Crawler https://en.wikipedia.org/wiki/Angeline_Quinto
 
 
 Sample command to run Indexer (pt-title):
 jar cf indexer.jar bin/search/jobs/Indexer.class
-java -cp bin  search.flame.FlameSubmit localhost:9000 indexer.jar search.jobs.Indexer
+java -cp bin  search.Spark.SparkSubmit localhost:9000 indexer.jar search.jobs.Indexer
 # assuming there is pt-crawl table in the corresponding worker folder 
 
 
 Sample command to run TF-IDF (pt-tfidf):
 jar cf tfidf.jar bin/search/jobs/TF_IDF.class
-java -cp bin  search.flame.FlameSubmit localhost:9000 tfidf.jar search.jobs.TF_IDF
+java -cp bin  search.Spark.SparkSubmit localhost:9000 tfidf.jar search.jobs.TF_IDF
 # assuming there is pt-crawl table in the corresponding worker folder 
 
 
 Sample command to run PageRank:
 jar cf pagerank.jar bin/search/jobs/PageRank.class
-java -cp bin  search.flame.FlameSubmit localhost:9000 pagerank.jar search.jobs.PageRank 0.0001
+java -cp bin  search.Spark.SparkSubmit localhost:9000 pagerank.jar search.jobs.PageRank 0.0001
 # assuming there is pt-crawl table in the corresponding worker folder 
 
 

@@ -3,20 +3,30 @@ package search.kvs;
 import java.util.*;
 import java.io.*;
 
+/**
+ * The Row class represents a single row in the key-value store. It is capable
+ * of storing multiple columns (key-value pairs), where each column value is a
+ * byte array.
+ * This class also provides functionality for serialization and deserialization
+ * of row data for storage and network transmission.
+ */
 public class Row implements Serializable {
 
   protected String key;
   protected HashMap<String, byte[]> values;
 
+  // Constructor initializes a new row with the given key.
   public Row(String keyArg) {
     key = keyArg;
     values = new HashMap<String, byte[]>();
   }
 
+  // Returns the key of this row.
   public synchronized String key() {
     return key;
   }
 
+  // Creates and returns a deep copy of this row.
   public synchronized Row clone() {
     Row theClone = new Row(key);
     for (String s : values.keySet())
@@ -24,28 +34,35 @@ public class Row implements Serializable {
     return theClone;
   }
 
+  // Returns a set of column keys in this row.
   public synchronized Set<String> columns() {
     return values.keySet();
   }
 
+  // Stores a string value under the specified column key.
   public synchronized void put(String key, String value) {
     values.put(key, value.getBytes());
   }
 
+  // Stores a byte array value under the specified column key.
   public synchronized void put(String key, byte[] value) {
     values.put(key, value);
   }
 
+  // Retrieves a string value for the specified column key.
   public synchronized String get(String key) {
     if (values.get(key) == null)
       return null;
     return new String(values.get(key));
   }
 
+  // Retrieves a byte array value for the specified column key.
   public synchronized byte[] getBytes(String key) {
     return values.get(key);
   }
 
+  // Reads a string from an InputStream until a space is encountered.
+  // It's used to parse serialized data where strings are delimited by spaces.
   static String readStringSpace(InputStream in) throws Exception {
     byte buffer[] = new byte[16384];
     int numRead = 0;
@@ -62,6 +79,8 @@ public class Row implements Serializable {
     }
   }
 
+  // Reads a string from a RandomAccessFile until a space is encountered.
+  // It's used to parse serialized data where strings are delimited by spaces.
   static String readStringSpace(RandomAccessFile in) throws Exception {
     byte buffer[] = new byte[16384];
     int numRead = 0;
@@ -78,6 +97,7 @@ public class Row implements Serializable {
     }
   }
 
+  // Deserializes a Row object from an InputStream.
   public static Row readFrom(InputStream in) throws Exception {
     String theKey = readStringSpace(in);
     if (theKey == null)
@@ -108,6 +128,7 @@ public class Row implements Serializable {
     }
   }
 
+  // Deserializes a Row object from a RandomAccessFile.
   public static Row readFrom(RandomAccessFile in) throws Exception {
     String theKey = readStringSpace(in);
     if (theKey == null)
@@ -138,6 +159,7 @@ public class Row implements Serializable {
     }
   }
 
+  // Converts the row into a string representation.
   public synchronized String toString() {
     String s = key + " {";
     boolean isFirst = true;
@@ -148,6 +170,7 @@ public class Row implements Serializable {
     return s + " }";
   }
 
+  // Serializes the row to a byte array for storage or transmission.
   public synchronized byte[] toByteArray() {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
 

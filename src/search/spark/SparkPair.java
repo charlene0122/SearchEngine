@@ -1,6 +1,6 @@
-package search.flame;
+package search.Spark;
 
-public class FlamePair implements Comparable<FlamePair> {
+public class SparkPair implements Comparable<SparkPair> {
 
   String a, b;
 
@@ -12,12 +12,12 @@ public class FlamePair implements Comparable<FlamePair> {
     return b;
   }
 
-  public FlamePair(String aArg, String bArg) {
+  public SparkPair(String aArg, String bArg) {
     a = aArg;
     b = bArg;
   }
 
-  public int compareTo(FlamePair o) {
+  public int compareTo(SparkPair o) {
     if (_1().equals(o._1()))
       return _2().compareTo(o._2());
     else

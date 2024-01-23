@@ -1,11 +1,11 @@
-package search.flame;
+package search.Spark;
 
 import java.util.*;
 import java.io.*;
 import search.kvs.Row;
 import search.kvs.KVSClient;
 
-public interface FlameContext {
+public interface SparkContext {
   public KVSClient getKVS();
 
   public interface RowToString extends Serializable {
@@ -20,13 +20,13 @@ public interface FlameContext {
 
   public void output(String s);
 
-  // This function should return a FlameRDD that contains the strings in the
+  // This function should return a SparkRDD that contains the strings in the
   // provided
   // List. It is okay for this method to run directly on the coordinator; it does
   // not
   // need to be parallelized.
 
-  public FlameRDD parallelize(List<String> list) throws Exception;
+  public SparkRDD parallelize(List<String> list) throws Exception;
 
   // This function should scan the table in the key-value store with the specified
   // name,
@@ -38,7 +38,7 @@ public interface FlameContext {
   // the
   // workers, just like the RDD/PairRDD operations.
 
-  public FlameRDD fromTable(String tableName, RowToString lambda, boolean persistent) throws Exception;
+  public SparkRDD fromTable(String tableName, RowToString lambda, boolean persistent) throws Exception;
 
   // This function should control how many separate key ranges each worker should
   // be assigned. If this function is never called, each worker should just get

@@ -1,7 +1,7 @@
 package search.jobs;
 
-import search.flame.FlameContext;
-import search.flame.FlameRDD;
+import search.Spark.SparkContext;
+import search.Spark.SparkRDD;
 import search.kvs.KVSClient;
 import search.tools.Hasher;
 import search.tools.Logger;
@@ -32,7 +32,7 @@ public class Crawler {
         }
     }
 
-    public static void run(FlameContext context, String[] args) {
+    public static void run(SparkContext context, String[] args) {
         KVSClient kvs = context.getKVS();
 
         if (args.length >= 1) {
@@ -40,7 +40,7 @@ public class Crawler {
             List<String> seedURLs = Arrays.stream(args).toList();
             seedURLs = seedURLs.stream().map(Crawler::normalizeSeedURL).toList();
             int iteration = 0;
-            FlameRDD urlQueue;
+            SparkRDD urlQueue;
 
             try {
                 String queueTableName = new String(kvs.get("pt-last-queue", "key", "lastqueue"));
@@ -77,7 +77,7 @@ public class Crawler {
                     logger.info("    ===================start crawl===================");
 
                     // iterate each url in the urlQueue
-                    FlameRDD.StringToIterable lambda = (String url) -> {
+                    SparkRDD.StringToIterable lambda = (String url) -> {
 
                         // new crawled urls to return
                         List<String> newURLs = new ArrayList<>();
@@ -126,14 +126,14 @@ public class Crawler {
 
                     };
 
-                    FlameRDD nextURLQueue = urlQueue.flatMap(lambda, true);
+                    SparkRDD nextURLQueue = urlQueue.flatMap(lambda, true);
 
                     // save the urls in the current queue for crash recovery mechanism
                     String queueTableName = "pt-queue-" + iteration;
                     kvs.put("pt-last-queue", "key", "lastqueue", queueTableName.getBytes());
 
                     // optimize for ec2
-                    FlameRDD savedTable = nextURLQueue;
+                    SparkRDD savedTable = nextURLQueue;
                     if (savedTable.count() > 20000) {
                         Vector<String> urls = savedTable.take(20000);
                         savedTable = context.parallelize(urls);

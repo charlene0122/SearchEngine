@@ -1,9 +1,9 @@
-package search.flame;
+package search.Spark;
 
 import java.net.*;
 import java.io.*;
 
-public class FlameSubmit {
+public class SparkSubmit {
 
   static int responseCode;
   static String errorResponse;
@@ -68,7 +68,7 @@ public class FlameSubmit {
 
   public static void main(String args[]) throws Exception {
     if (args.length < 3) {
-      System.err.println("Syntax: FlameSubmit <server> <jarFile> <className> [args...]");
+      System.err.println("Syntax: SparkSubmit <server> <jarFile> <className> [args...]");
       System.exit(1);
     }
 

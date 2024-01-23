@@ -1,10 +1,10 @@
 package search.jobs;
 
 import search.external.PorterStemmer;
-import search.flame.FlameContext;
-import search.flame.FlamePair;
-import search.flame.FlamePairRDD;
-import search.flame.FlameRDD;
+import search.Spark.SparkContext;
+import search.Spark.SparkPair;
+import search.Spark.SparkPairRDD;
+import search.Spark.SparkRDD;
 import search.kvs.Row;
 
 import java.util.Arrays;
@@ -21,9 +21,9 @@ import java.util.stream.Collectors;
 import static search.tools.Hasher.hash;
 
 public class TF_IDF {
-    public static void run(FlameContext context, String[] args) throws Exception {
+    public static void run(SparkContext context, String[] args) throws Exception {
         // Implementation will go here
-        FlameRDD rawRDD = context.fromTable("pt-crawl", (Row row) -> {
+        SparkRDD rawRDD = context.fromTable("pt-crawl", (Row row) -> {
             if (row.get("url").length() < 100 && "200".equals(row.get("responseCode")) && row.get("contentType") != null
                     && row.get("contentType").contains("text/html")) {
                 return row.get("url") + "," + row.get("page");
@@ -34,9 +34,9 @@ public class TF_IDF {
         rawRDD.saveAsTable("pt-data");
 
         // Use mapToPair to convert to PairRDD
-        FlamePairRDD pairRDD = rawRDD.mapToPair(s -> {
+        SparkPairRDD pairRDD = rawRDD.mapToPair(s -> {
             String[] parts = s.split(",", 2);
-            return new FlamePair(parts[0], parts[1]);
+            return new SparkPair(parts[0], parts[1]);
         }, true);
         pairRDD.saveAsTable("pt-pairs");
 
@@ -55,7 +55,7 @@ public class TF_IDF {
         // }, 0, 10, TimeUnit.SECONDS);
 
         // Step 1: 计算TF值
-        FlamePairRDD urlWordTfPairs = pairRDD.flatMapToPair(pair -> {
+        SparkPairRDD urlWordTfPairs = pairRDD.flatMapToPair(pair -> {
             double a = 0.4;
             String url = pair._1();
             String pageContent = pair._2();
@@ -83,14 +83,14 @@ public class TF_IDF {
             return wordCounts.entrySet().stream()
                     .map(e -> {
                         double adjustedTf = a + (1 - a) * e.getValue() / (double) maxFreq;
-                        return new FlamePair(e.getKey(), url + "," + adjustedTf);
+                        return new SparkPair(e.getKey(), url + "," + adjustedTf);
                     })
                     .collect(Collectors.toList());
         }, true);
         urlWordTfPairs.saveAsTable("pt-tf");
 
         // Step 2: 计算每个词出现的次数
-        FlamePairRDD wordDocumentCount = rawRDD.flatMapToPair(s -> {
+        SparkPairRDD wordDocumentCount = rawRDD.flatMapToPair(s -> {
             String[] parts = s.split(",", 2);
             String textOnly = removeHTMLTagsAndPunctuation(parts[1]).toLowerCase();
 
@@ -106,12 +106,12 @@ public class TF_IDF {
             }
 
             return uniqueWords.stream()
-                    .map(word -> new FlamePair(word, "1"))
+                    .map(word -> new SparkPair(word, "1"))
                     .collect(Collectors.toList());
         }, true);
         wordDocumentCount.saveAsTable("pt-wordDocumentCount");
 
-        FlamePairRDD wordDocCount = wordDocumentCount.foldByKey("0",
+        SparkPairRDD wordDocCount = wordDocumentCount.foldByKey("0",
                 (count1, count2) -> String.valueOf(Integer.parseInt(count1) + Integer.parseInt(count2)), true);
         wordDocCount.saveAsTable("pt-wordDocCount");
 
@@ -119,25 +119,25 @@ public class TF_IDF {
         long totalDocuments = rawRDD.count();
 
         // Step 3: 计算IDF值
-        FlamePairRDD wordIdfValues = wordDocCount.flatMapToPair(pair -> {
+        SparkPairRDD wordIdfValues = wordDocCount.flatMapToPair(pair -> {
             String word = pair._1();
             double idf = Math.log(totalDocuments / Double.parseDouble(pair._2()));
-            return Collections.singletonList(new FlamePair(word, String.valueOf(idf)));
+            return Collections.singletonList(new SparkPair(word, String.valueOf(idf)));
         }, true);
         wordIdfValues.saveAsTable("pt-wordIdfValues");
 
         // urlWordTfPairs = context.fromTable("pt-tf", row ->
         // row.get("value")).mapToPair(s -> {
         // String[] parts = s.split(",", 2);
-        // return new FlamePair(parts[0], parts[1]);
+        // return new SparkPair(parts[0], parts[1]);
         // });
 
         // Step 3: 合并TF和IDF值，计算TF-IDF
 
-        FlamePairRDD joined = urlWordTfPairs.join(wordIdfValues, true);
+        SparkPairRDD joined = urlWordTfPairs.join(wordIdfValues, true);
         joined.saveAsTable("pt-joined");
 
-        FlamePairRDD wordTfIdfPairs = joined.flatMapToPair(pair -> {
+        SparkPairRDD wordTfIdfPairs = joined.flatMapToPair(pair -> {
             String word = pair._1();
             String combinedData = pair._2(); // 获取合并后的数据，格式为 "url,TF,IDF"
 
@@ -151,11 +151,11 @@ public class TF_IDF {
             double tf = Double.parseDouble(parts[1]);
             double idf = Double.parseDouble(parts[2]);
             double tfIdfValue = tf * idf;
-            return Collections.singletonList(new FlamePair(word, url + "," + tfIdfValue));
+            return Collections.singletonList(new SparkPair(word, url + "," + tfIdfValue));
         }, true);
         wordTfIdfPairs.saveAsTable("pt-wordTfIdfPairs");
 
-        FlamePairRDD invertedIndex = wordTfIdfPairs.foldByKey("", (accum, url) -> {
+        SparkPairRDD invertedIndex = wordTfIdfPairs.foldByKey("", (accum, url) -> {
             if (accum.isEmpty())
                 return url;
             return accum + ", " + url;

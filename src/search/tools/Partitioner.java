@@ -8,25 +8,25 @@ public class Partitioner {
     public String kvsWorker;
     public String fromKey;
     public String toKeyExclusive;
-    public String assignedFlameWorker;
+    public String assignedSparkWorker;
 
-    Partition(String kvsWorkerArg, String fromKeyArg, String toKeyExclusiveArg, String assignedFlameWorkerArg) {
+    Partition(String kvsWorkerArg, String fromKeyArg, String toKeyExclusiveArg, String assignedSparkWorkerArg) {
       kvsWorker = kvsWorkerArg;
       fromKey = fromKeyArg;
       toKeyExclusive = toKeyExclusiveArg;
-      assignedFlameWorker = assignedFlameWorkerArg;
+      assignedSparkWorker = assignedSparkWorkerArg;
     }
 
     Partition(String kvsWorkerArg, String fromKeyArg, String toKeyExclusiveArg) {
       kvsWorker = kvsWorkerArg;
       fromKey = fromKeyArg;
       toKeyExclusive = toKeyExclusiveArg;
-      assignedFlameWorker = null;
+      assignedSparkWorker = null;
     }
 
     public String toString() {
       return "[kvs:" + kvsWorker + ", keys: " + (fromKey == null ? "" : fromKey) + "-"
-          + (toKeyExclusive == null ? "" : toKeyExclusive) + ", flame: " + assignedFlameWorker + "]";
+          + (toKeyExclusive == null ? "" : toKeyExclusive) + ", Spark: " + assignedSparkWorker + "]";
     }
   };
 
@@ -36,14 +36,14 @@ public class Partitioner {
     return aPcs[1].equals(bPcs[1]);
   }
 
-  Vector<String> flameWorkers;
+  Vector<String> SparkWorkers;
   Vector<Partition> partitions;
   boolean alreadyAssigned;
   int keyRangesPerWorker;
 
   public Partitioner() {
     partitions = new Vector<Partition>();
-    flameWorkers = new Vector<String>();
+    SparkWorkers = new Vector<String>();
     alreadyAssigned = false;
     keyRangesPerWorker = 1;
   }
@@ -56,15 +56,15 @@ public class Partitioner {
     partitions.add(new Partition(kvsWorker, fromKeyOrNull, toKeyOrNull));
   }
 
-  public void addFlameWorker(String worker) {
-    flameWorkers.add(worker);
+  public void addSparkWorker(String worker) {
+    SparkWorkers.add(worker);
   }
 
   public Vector<Partition> assignPartitions() {
-    System.out.println("flameworkers size: " + flameWorkers.size());
-    if (alreadyAssigned || (flameWorkers.size() < 1)) {
+    System.out.println("Sparkworkers size: " + SparkWorkers.size());
+    if (alreadyAssigned || (SparkWorkers.size() < 1)) {
       System.out.println(alreadyAssigned);
-      System.out.println(flameWorkers.size());
+      System.out.println(SparkWorkers.size());
       return null;
 
     }
@@ -74,14 +74,14 @@ public class Partitioner {
     /*
      * So far, the 'partitions' vector has one entry for each KVS worker, each of
      * which is responsible for a range of keys. Normally, we would try to
-     * evenly assign Flame workers to these ranges, while matching up Flame workers
+     * evenly assign Spark workers to these ranges, while matching up Spark workers
      * with KVS workers that are on the same machine. But if we happen
-     * to have fewer KVS partitions than Flame workers, we need to split up some of
-     * the KVS partitions first, otherwise some of the Flame workers
+     * to have fewer KVS partitions than Spark workers, we need to split up some of
+     * the KVS partitions first, otherwise some of the Spark workers
      * will be idle.
      */
 
-    while (partitions.size() < flameWorkers.size()) {
+    while (partitions.size() < SparkWorkers.size()) {
       Partition p = partitions.elementAt(rand.nextInt(partitions.size()));
       String split;
       do {
@@ -98,7 +98,7 @@ public class Partitioner {
      * workers on the same host
      */
 
-    int numAssigned[] = new int[flameWorkers.size()];
+    int numAssigned[] = new int[SparkWorkers.size()];
     for (int i = 0; i < numAssigned.length; i++)
       numAssigned[i] = 0;
 
@@ -107,14 +107,14 @@ public class Partitioner {
       int bestWorkload = 9999;
       for (int j = 0; j < numAssigned.length; j++) {
         if ((numAssigned[j] < bestWorkload) || ((numAssigned[j] == bestWorkload)
-            && sameIP(flameWorkers.elementAt(j), partitions.elementAt(i).kvsWorker))) {
+            && sameIP(SparkWorkers.elementAt(j), partitions.elementAt(i).kvsWorker))) {
           bestCandidate = j;
           bestWorkload = numAssigned[j];
         }
       }
 
       numAssigned[bestCandidate]++;
-      partitions.elementAt(i).assignedFlameWorker = flameWorkers.elementAt(bestCandidate);
+      partitions.elementAt(i).assignedSparkWorker = SparkWorkers.elementAt(bestCandidate);
     }
 
     /* Now split further to achieve the desired level of parallelism */
@@ -131,7 +131,7 @@ public class Partitioner {
       Partition p = null;
       do {
         p = partitions.elementAt(rand.nextInt(partitions.size()));
-      } while (!p.assignedFlameWorker.equals(flameWorkers.elementAt(toSplit)));
+      } while (!p.assignedSparkWorker.equals(SparkWorkers.elementAt(toSplit)));
 
       String split;
       do {
@@ -139,7 +139,7 @@ public class Partitioner {
             .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append).toString();
       } while (((p.fromKey != null) && (split.compareTo(p.fromKey) <= 0))
           || ((p.toKeyExclusive != null) && (split.compareTo(p.toKeyExclusive) >= 0)));
-      partitions.add(new Partition(p.kvsWorker, split, p.toKeyExclusive, p.assignedFlameWorker));
+      partitions.add(new Partition(p.kvsWorker, split, p.toKeyExclusive, p.assignedSparkWorker));
       p.toKeyExclusive = split;
       numAssigned[toSplit]++;
     }
@@ -156,9 +156,9 @@ public class Partitioner {
     p.addKVSWorker("10.0.0.1:1001", null, "def");
     p.addKVSWorker("10.0.0.2:1002", "def", "mno");
     p.addKVSWorker("10.0.0.3:1003", "mno", null);
-    p.addFlameWorker("10.0.0.1:2001");
-    p.addFlameWorker("10.0.0.2:2002");
-    p.addFlameWorker("10.0.0.3:2003");
+    p.addSparkWorker("10.0.0.1:2001");
+    p.addSparkWorker("10.0.0.2:2002");
+    p.addSparkWorker("10.0.0.3:2003");
     Vector<Partition> result = p.assignPartitions();
     for (Partition x : result)
       System.out.println(x);

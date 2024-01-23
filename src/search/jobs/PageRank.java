@@ -13,25 +13,25 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import search.flame.FlameContext;
-import search.flame.FlamePair;
-import search.flame.FlamePairRDD;
-import search.flame.FlameRDD;
+import search.Spark.SparkContext;
+import search.Spark.SparkPair;
+import search.Spark.SparkPairRDD;
+import search.Spark.SparkRDD;
 import search.tools.Hasher;
 import search.tools.URLParser;
 
 public class PageRank {
 
-    public static void run(FlameContext context, String[] args) throws Exception {
+    public static void run(SparkContext context, String[] args) throws Exception {
         if (args.length != 1) {
             System.err.println("Wrong input argument. Please provide convergence threshold");
             System.exit(1);
         }
 
         // step 3: lead the data to pagerank
-        FlameRDD crawledData = context.fromTable("pt-crawl", row -> row.get("url") + "," + row.get("page"), true);
+        SparkRDD crawledData = context.fromTable("pt-crawl", row -> row.get("url") + "," + row.get("page"), true);
         crawledData.saveAsTable("pt-data");
-        FlamePairRDD stateTable = crawledData.mapToPair(s -> {
+        SparkPairRDD stateTable = crawledData.mapToPair(s -> {
             String[] values = s.split(",", 2);
             String url = values[0];
             String page = values[1];
@@ -50,7 +50,7 @@ public class PageRank {
                 }
             }
 
-            return new FlamePair(Hasher.hash(url), "1.0,1.0," + normalizedUrls.toString());
+            return new SparkPair(Hasher.hash(url), "1.0,1.0," + normalizedUrls.toString());
         }, true);
 
         stateTable.saveAsTable("pt-pair");
@@ -61,7 +61,7 @@ public class PageRank {
         do {
 
             // step 4: compute the transfer table
-            FlamePairRDD transferTable = stateTable.flatMapToPair(pair -> {
+            SparkPairRDD transferTable = stateTable.flatMapToPair(pair -> {
                 String url = pair._1();
                 String[] values = pair._2().split(",", 3);
                 double rc = Double.parseDouble(values[0]);
@@ -74,20 +74,20 @@ public class PageRank {
 
                 double computedRank = links.isEmpty() ? 0 : 0.85 * rc / links.size();
 
-                List<FlamePair> transferedRank = new ArrayList<>();
+                List<SparkPair> transferedRank = new ArrayList<>();
                 links.forEach(link -> {
                     if (!link.trim().isEmpty()) {
-                        transferedRank.add(new FlamePair(link, String.valueOf(computedRank)));
+                        transferedRank.add(new SparkPair(link, String.valueOf(computedRank)));
                     }
                 });
-                transferedRank.add(new FlamePair(url, "0.0"));
+                transferedRank.add(new SparkPair(url, "0.0"));
                 return transferedRank;
 
             }, true);
             transferTable.saveAsTable("pt-transfer");
 
             // step 5: aggregate the transfers
-            FlamePairRDD newRanks = transferTable.foldByKey("0.0", (acc, rank) -> {
+            SparkPairRDD newRanks = transferTable.foldByKey("0.0", (acc, rank) -> {
                 double sumRank = Double.parseDouble(acc);
                 double currRank = Double.parseDouble(rank);
                 return String.valueOf(sumRank + currRank);
@@ -96,10 +96,10 @@ public class PageRank {
             newRanks.saveAsTable("pt-newranks");
 
             // step 6: update the state table
-            FlamePairRDD joinedTable = stateTable.join(newRanks, true);
+            SparkPairRDD joinedTable = stateTable.join(newRanks, true);
             joinedTable.saveAsTable("pt-joinedtable");
 
-            FlamePairRDD updatedStateTable = joinedTable.flatMapToPair(pair -> {
+            SparkPairRDD updatedStateTable = joinedTable.flatMapToPair(pair -> {
                 String url = pair._1();
                 String[] values = pair._2().split(",");
 
@@ -109,7 +109,7 @@ public class PageRank {
                 if (values.length >= 3) {
                     String links = String.join(",", Arrays.copyOfRange(values, 2, values.length - 1));
                     String newValue = newRank + "," + values[0] + "," + links;
-                    return Collections.singletonList(new FlamePair(url, newValue));
+                    return Collections.singletonList(new SparkPair(url, newValue));
                 } else {
                     return Collections.emptyList();
                 }
@@ -117,14 +117,14 @@ public class PageRank {
 
             updatedStateTable.saveAsTable("pt-updatedstatetable");
             // step 7: compute difference and check for convergence
-            FlamePairRDD rankChanges = updatedStateTable.flatMapToPair(pair -> {
+            SparkPairRDD rankChanges = updatedStateTable.flatMapToPair(pair -> {
                 String url = pair._1();
                 String[] ranks = pair._2().split(",");
 
                 double change = Double.parseDouble(ranks[1]) - Double.parseDouble(ranks[0]);
                 String changeInRank = String.valueOf(Math.abs(change));
 
-                return Collections.singletonList(new FlamePair(url, changeInRank));
+                return Collections.singletonList(new SparkPair(url, changeInRank));
             }, true);
             rankChanges.saveAsTable("pt-rankchanges");
 

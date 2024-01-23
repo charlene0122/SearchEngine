@@ -1,4 +1,4 @@
-package search.flame;
+package search.Spark;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -12,7 +12,7 @@ import static search.kvs.Worker.generateId;
 import static search.webserver.Server.*;
 import search.tools.Hasher;
 import search.tools.Serializer;
-import search.flame.FlameContext.RowToString;
+import search.Spark.SparkContext.RowToString;
 import search.kvs.*;
 import search.webserver.Request;
 
@@ -28,7 +28,7 @@ class Worker extends search.generic.Worker {
         System.out.println("worker initiated on port " + port);
         String server = args[1];
 
-        // for flame worker workerID is not assigned in the beginning, using !! to send
+        // for Spark worker workerID is not assigned in the beginning, using !! to send
         // to coordinator and use IP instead
         startPingThread(server, "!!", port);
         final File myJAR = new File("__worker" + port + "-current.jar");
@@ -76,7 +76,7 @@ class Worker extends search.generic.Worker {
             String prefix = inputTable + System.currentTimeMillis();
             switch (operation) {
                 case "flatMap":
-                    FlameRDD.StringToIterable flatMap = (FlameRDD.StringToIterable) Serializer
+                    SparkRDD.StringToIterable flatMap = (SparkRDD.StringToIterable) Serializer
                             .byteArrayToObject(request.bodyAsBytes(), myJAR);
                     index = 1;
 
@@ -93,23 +93,23 @@ class Worker extends search.generic.Worker {
                     break;
 
                 case "mapToPair":
-                    FlameRDD.StringToPair mapToPair = (FlameRDD.StringToPair) Serializer
+                    SparkRDD.StringToPair mapToPair = (SparkRDD.StringToPair) Serializer
                             .byteArrayToObject(request.bodyAsBytes(), myJAR);
                     index = 1;
                     while (rows.hasNext()) {
                         Row row = rows.next();
-                        FlamePair pair = mapToPair.op(row.get("value"));
+                        SparkPair pair = mapToPair.op(row.get("value"));
                         // String rowKey = Hasher.hash(prefix + index++);
                         Coordinator.kvs.put(outputTable, pair._1(), row.key(), pair._2());
                     }
                     break;
-                // FlameRDD.StringToPair mapToPair = (FlameRDD.StringToPair)
+                // SparkRDD.StringToPair mapToPair = (SparkRDD.StringToPair)
                 // Serializer.byteArrayToObject(request.bodyAsBytes(), myJAR);
                 // index = 1;
                 // HashMap<String, Row> cache = new HashMap<>();
                 // while (rows.hasNext()) {
                 // Row row = rows.next();
-                // FlamePair pair = mapToPair.op(row.get("value"));
+                // SparkPair pair = mapToPair.op(row.get("value"));
                 // String rowKey = Hasher.hash(prefix + index++);
                 // Row newRow = new Row(pair._1());
                 // newRow.put(rowKey, pair._2().getBytes(StandardCharsets.UTF_8));
@@ -133,7 +133,7 @@ class Worker extends search.generic.Worker {
                         response.status(400, "Bad request");
                         return "400 Bad Request- missing zeroElement param for foldByKey";
                     }
-                    FlamePairRDD.TwoStringsToString foldByKey = (FlamePairRDD.TwoStringsToString) Serializer
+                    SparkPairRDD.TwoStringsToString foldByKey = (SparkPairRDD.TwoStringsToString) Serializer
                             .byteArrayToObject(request.bodyAsBytes(), myJAR);
                     while (rows.hasNext()) {
                         Row row = rows.next();
@@ -149,7 +149,7 @@ class Worker extends search.generic.Worker {
 
                 case "fold":
 
-                    FlamePairRDD.TwoStringsToString fold = (FlamePairRDD.TwoStringsToString) Serializer
+                    SparkPairRDD.TwoStringsToString fold = (SparkPairRDD.TwoStringsToString) Serializer
                             .byteArrayToObject(request.bodyAsBytes(), myJAR);
                     String zero = request.queryParams("zero2");
                     if (zero == null) {
@@ -213,26 +213,26 @@ class Worker extends search.generic.Worker {
                     break;
 
                 case "flatMapToPair":
-                    FlameRDD.StringToPairIterable flatMapToPair = (FlameRDD.StringToPairIterable) Serializer
+                    SparkRDD.StringToPairIterable flatMapToPair = (SparkRDD.StringToPairIterable) Serializer
                             .byteArrayToObject(request.bodyAsBytes(), myJAR);
                     index = 1;
                     while (rows.hasNext()) {
                         Row row = rows.next();
-                        Iterable<FlamePair> pairs = flatMapToPair.op(row.get("value"));
-                        for (FlamePair pair : pairs) {
+                        Iterable<SparkPair> pairs = flatMapToPair.op(row.get("value"));
+                        for (SparkPair pair : pairs) {
                             String hash = row.key() + "-" + index++;
                             Coordinator.kvs.put(outputTable, pair._1(), hash, pair._2());
                         }
                     }
                     break;
                 case "flatMapFromPair":
-                    FlamePairRDD.PairToStringIterable flatMapFromPair = (FlamePairRDD.PairToStringIterable) Serializer
+                    SparkPairRDD.PairToStringIterable flatMapFromPair = (SparkPairRDD.PairToStringIterable) Serializer
                             .byteArrayToObject(request.bodyAsBytes(), myJAR);
                     index = 1;
                     while (rows.hasNext()) {
                         Row row = rows.next();
                         for (String column : row.columns()) {
-                            FlamePair pair = new FlamePair(row.key(), row.get(column));
+                            SparkPair pair = new SparkPair(row.key(), row.get(column));
                             Iterable<String> iter = flatMapFromPair.op(pair);
                             if (iter != null) {
                                 for (String result : iter) {
@@ -246,15 +246,15 @@ class Worker extends search.generic.Worker {
                     }
                     break;
                 case "flatMapToPairFromPair":
-                    FlamePairRDD.PairToPairIterable flatMapToPair2 = (FlamePairRDD.PairToPairIterable) Serializer
+                    SparkPairRDD.PairToPairIterable flatMapToPair2 = (SparkPairRDD.PairToPairIterable) Serializer
                             .byteArrayToObject(request.bodyAsBytes(), myJAR);
                     index = 1;
                     while (rows.hasNext()) {
                         Row row = rows.next();
                         for (String column : row.columns()) {
-                            FlamePair pair = new FlamePair(row.key(), row.get(column));
-                            Iterable<FlamePair> pairs = flatMapToPair2.op(pair);
-                            for (FlamePair p : pairs) {
+                            SparkPair pair = new SparkPair(row.key(), row.get(column));
+                            Iterable<SparkPair> pairs = flatMapToPair2.op(pair);
+                            for (SparkPair p : pairs) {
                                 String hash = row.key() + "-" + index++;
                                 Coordinator.kvs.put(outputTable, p._1(), hash, p._2());
                             }
